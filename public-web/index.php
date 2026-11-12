@@ -39,32 +39,41 @@ $supportedScopes = [
 <div class="shell">
 <header class="header">
   <a class="brand" href="./" aria-label="ScopeMac home"><img src="assets/icon.svg" width="30" height="30" alt=""><span>ScopeMac</span></a>
-  <nav aria-label="Main navigation"><a href="#screenshots">Screenshots</a><a href="#details">Features</a><a href="#connect">Connect your scope</a><a class="nav-download" href="<?= $repo ?>/releases">Releases <span aria-hidden="true">↓</span></a></nav>
+  <nav aria-label="Main navigation"><a href="#screenshots">Screenshots</a><a href="#details">Features</a><a href="#connect">Connect your scope</a><a class="nav-download" href="#get">Get ScopeMac <span aria-hidden="true">↓</span></a></nav>
 </header>
 <main id="main">
 <section class="hero" aria-labelledby="hero-title">
   <div class="eyebrow"><span class="status-dot"></span> SCOPEMAC <?= $version ?> · HANTEK DSO2D15</div>
   <h1 id="hero-title">A clearer view<br>of your <em>signal.</em></h1>
   <p class="intro">Your oscilloscope. Your Mac. A native workspace for capturing, exploring and saving waveforms.</p>
-  <div class="actions"><a class="button primary" href="#download">Download ScopeMac <span aria-hidden="true">↓</span></a><a class="button secondary" href="<?= $repo ?>#build-from-source">Build it yourself <span aria-hidden="true">↗</span></a></div>
+  <div class="actions"><a class="button primary" href="#get">Download ScopeMac <span aria-hidden="true">↓</span></a><a class="button secondary" href="<?= $repo ?>#build-from-source">Build it yourself <span aria-hidden="true">↗</span></a></div>
   <p class="requirements">Apple Silicon <span>·</span> macOS 14+ <span>·</span> Free & open source</p>
 </section>
-<section class="release-section" id="download" aria-labelledby="release-title">
-  <span class="eyebrow">DOWNLOAD FOR MAC</span>
+<section class="release-section" id="get" aria-labelledby="release-title">
+  <span id="download" aria-hidden="true"></span>
+  <span class="eyebrow">READY FOR YOUR WORKBENCH</span>
+  <h2 id="release-title">Get ScopeMac.</h2>
+  <p>Download the app and connect your oscilloscope. Or explore Demo mode without hardware.</p>
+  <div class="release-meta"><span>macOS 14+</span><span>Apple Silicon</span><span>Free · GPL v3 or later</span></div>
+  <div class="download-panel">
   <?php if ($latestRelease): ?>
-  <h2 id="release-title">Latest release · <?= webEscape($latestRelease['tag']) ?></h2>
-  <?php if ($latestRelease['date']): ?><p>Published <time datetime="<?= webEscape($latestRelease['date']) ?>"><?= webEscape($latestRelease['date']) ?></time> · Apple Silicon · macOS 14+</p><?php endif; ?>
-  <ul class="release-assets">
-  <?php foreach ($latestRelease['assets'] as $name => $url): ?>
-    <li><a href="<?= webEscape($url) ?>"><?= webEscape($name) ?> <span aria-hidden="true">↓</span></a></li>
-  <?php endforeach; ?>
-  </ul>
-  <a class="text-link" href="<?= webEscape($latestRelease['url']) ?>">Release notes and installation details ↗</a>
+    <div class="download-heading"><img src="assets/icon.svg" width="64" height="64" alt=""><div><span class="eyebrow">NATIVE MAC APP</span><h3>ScopeMac <?= webEscape($latestRelease['tag']) ?></h3><?php if ($latestRelease['date']): ?><p>Published <time datetime="<?= webEscape($latestRelease['date']) ?>"><?= webEscape($latestRelease['date']) ?></time></p><?php endif; ?></div></div>
+    <div class="download-options">
+    <?php foreach (['dmg' => 'Download for macOS', 'zip' => 'Download ZIP'] as $extension => $label): ?>
+      <?php foreach ($latestRelease['assets'] as $name => $url): if (!str_ends_with($name, '.' . $extension)) continue; ?>
+      <div class="download-action"><a class="button <?= $extension === 'dmg' ? 'primary' : 'secondary' ?>" href="<?= webEscape($url) ?>"><?= $label ?> <span aria-hidden="true">↓</span></a><span class="download-filename"><?= webEscape($name) ?></span><?php if (isset($latestRelease['assets'][$name . '.sha256'])): ?><a class="checksum-link" href="<?= webEscape($latestRelease['assets'][$name . '.sha256']) ?>">SHA-256 checksum</a><?php endif; ?></div>
+      <?php endforeach; ?>
+    <?php endforeach; ?>
+    </div>
+    <?php if (!$latestRelease['assets']): ?><p>Downloads are being prepared. Check the release notes for availability.</p><?php endif; ?>
+    <p>Open the DMG and drag ScopeMac into Applications. For ZIP, extract the app and move it into Applications.</p>
+    <div class="release-links"><a href="<?= webEscape($latestRelease['url']) ?>">Release notes ↗</a><a href="<?= $repo ?>/archive/refs/tags/<?= rawurlencode($latestRelease['tag']) ?>.zip">Source ZIP</a><a href="<?= $repo ?>/releases">All releases ↗</a></div>
   <?php else: ?>
-  <h2 id="release-title">ScopeMac releases</h2>
-  <p>See GitHub for available builds and installation details.</p>
+    <div class="download-heading"><img src="assets/icon.svg" width="64" height="64" alt=""><div><h3>ScopeMac for Mac</h3><p>Release information is currently unavailable.</p></div></div>
+    <a class="button primary" href="<?= $repo ?>/releases/latest">View latest release ↗</a>
   <?php endif; ?>
-  <p><a href="<?= $repo ?>/releases">All releases on GitHub ↗</a></p>
+  </div>
+  <p class="download-caption">Downloads follow the latest stable GitHub release automatically.</p>
 </section>
 <section class="screenshots" id="screenshots" aria-labelledby="screenshots-title">
   <div class="preview-caption"><span>INSIDE SCOPEMAC 0.1</span><span class="capture-label">Real app · synthetic demo signals</span></div>
