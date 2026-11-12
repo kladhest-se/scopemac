@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """GitHub/GitLab publication with read-only preflight and verified uploads."""
+import base64
 import hashlib
 import json
 import os
@@ -97,6 +98,30 @@ class HTTP:
                                                'Content-Length': str(Path(path).stat().st_size)}) as response:
                 return json.load(response)
 
+    def verify_github_write_access(self, web_url):
+        # Repository permissions.push describes user roles, not an installation
+        # token's Contents grant. Authenticate against Git's receive-pack discovery
+        # endpoint instead: this is a GET advertisement, with no ref/object writes.
+        require(self.github, 'GitHub write probe requires a GitHub client')
+        repository(web_url, 'github')
+        encoded = base64.b64encode(('x-access-token:' + self.token).encode()).decode()
+        request = urllib.request.Request(web_url + '.git/info/refs?service=git-receive-pack',
+            headers={'Authorization': 'Basic ' + encoded, 'User-Agent': 'git/ScopeMac-release',
+                     'Accept': 'application/x-git-receive-pack-advertisement'}, method='GET')
+        try:
+            with self.opener.open(request, timeout=120) as response:
+                content_type = response.headers.get('Content-Type', '').split(';')[0].lower()
+                require(response.status == 200 and content_type == 'application/x-git-receive-pack-advertisement'
+                        and b'# service=git-receive-pack\n' in response.read(65536),
+                        'GitHub did not confirm authenticated Git write-service access')
+        except urllib.error.HTTPError as error:
+            status = error.code
+            error.close()
+            raise ReleaseError('GitHub write-service check failed (HTTP ' + str(status) +
+                '); check the token Contents write permission, repository selection and organization policy') from None
+        except (OSError, urllib.error.URLError):
+            raise ReleaseError('GitHub write-service check could not connect; no credentials or remote output displayed') from None
+
     def download_digest(self, url, missing=False):
         # Generic package downloads can redirect to signed object-storage URLs. Follow
         # only HTTPS redirects, stripping authentication permanently on origin change.
@@ -169,8 +194,8 @@ class GitHub:
     def preflight(self):
         repo = self.http.json('GET', self.base)
         require(repo.get('html_url', '').lower() == self.m['github'].lower(), 'GitHub API repository differs')
-        require(repo.get('permissions', {}).get('push') is True and not repo.get('archived'),
-                'GitHub token needs repository write access')
+        require(not repo.get('archived'), 'GitHub repository is archived')
+        self.http.verify_github_write_access(self.m['github'])
         self.release = self.find()
         if self.release:
             require(self.release.get('body', '') == self.m['notes'] and

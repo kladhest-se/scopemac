@@ -316,6 +316,9 @@ class FakeGitHubHTTP:
             return self.release
         raise AssertionError('unexpected API request')
 
+    def verify_github_write_access(self, web_url):
+        self.events.append(('permission-probe', web_url))
+
     def upload(self, method, url, path):
         name = Path(path).name
         asset = {'name': name, 'state': 'uploaded',
@@ -520,6 +523,44 @@ class PublicationTests(Fixture):
             http.json('GET', 'https://gitlab.example.com/api')
         self.assertNotIn('never-expose-this-token', str(caught.exception))
         self.assertNotIn('private response', str(caught.exception))
+
+    def test_github_app_installation_ignores_user_role_flags_but_checks_write_service(self):
+        m = self.manifest()
+        class InstallationHTTP(FakeGitHubHTTP):
+            def json(self, method, url, value=None, missing=False):
+                result = super().json(method, url, value, missing)
+                if method == 'GET' and url.endswith('/repos/kladhest-se/scopemac'):
+                    result['permissions'] = {k: False for k in ('admin', 'maintain', 'push', 'triage', 'pull')}
+                return result
+        http = InstallationHTTP(m)
+        adapter = pub.GitHub(self.config, m, self.tool.artifacts, http)
+        adapter.preflight()
+        self.assertTrue(any(e[0] == 'permission-probe' for e in http.events))
+        with patch.object(http, 'verify_github_write_access', side_effect=prov.ReleaseError('Contents write denied')):
+            with self.assertRaises(prov.ReleaseError):
+                adapter.preflight()
+        self.assertFalse(any(e[0] in {'POST', 'PATCH', 'upload'} for e in http.events))
+
+    def test_github_write_probe_is_read_only_and_redacts_failed_response(self):
+        import urllib.error
+        client = pub.HTTP('github.com', 'fixture-private-token', github=True)
+        class Response(io.BytesIO):
+            status = 200
+            headers = {'Content-Type': 'application/x-git-receive-pack-advertisement'}
+        response = Response(b'001f# service=git-receive-pack\n0000')
+        with patch.object(client.opener, 'open', return_value=response) as opened:
+            client.verify_github_write_access(self.config['github'])
+        request = opened.call_args.args[0]
+        self.assertEqual(request.get_method(), 'GET')
+        self.assertIsNone(request.data)
+        self.assertTrue(request.full_url.startswith('https://github.com/kladhest-se/scopemac.git/info/refs?'))
+        self.assertNotIn('fixture-private-token', request.full_url)
+        denied = urllib.error.HTTPError(request.full_url, 403, 'private-token-response', {}, io.BytesIO(b'fixture-private-token'))
+        with patch.object(client.opener, 'open', side_effect=denied), self.assertRaises(prov.ReleaseError) as caught:
+            client.verify_github_write_access(self.config['github'])
+        self.assertIn('Contents write', str(caught.exception))
+        self.assertNotIn('fixture-private-token', str(caught.exception))
+        self.assertNotIn('private-token-response', str(caught.exception))
 
 
 if __name__ == '__main__':
