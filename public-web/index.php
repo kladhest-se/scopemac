@@ -147,7 +147,7 @@ open build/ScopeMac.app</code></pre><p>Choose <strong>Demo</strong> to explore w
   <p>Local builds are ad-hoc signed; no Apple Developer account is required. Run <code>make test</code> to check the app and USB transport.</p>
   <div class="release-links"><a href="<?= $repo ?>">Browse source ↗</a><?php if ($latestRelease): ?><a href="<?= $repo ?>/archive/refs/tags/<?= rawurlencode($latestRelease['tag']) ?>.zip">Release source ZIP</a><?php endif; ?><a href="<?= $repo ?>/blob/main/BUILD-AND-SIGN.md">Build and signing guide ↗</a></div>
 </section>
-<section class="closing" aria-labelledby="closing-title"><div><span class="eyebrow">OPEN TO EXPLORATION</span><h2 id="closing-title">A small app.<br>A useful addition to your bench.</h2></div><div><a class="text-link" href="<?= $repo ?>">View the source on GitHub <span aria-hidden="true">↗</span></a></div></section>
+
 </main>
 <footer><a class="brand" href="./"><img src="assets/icon.svg" width="23" height="23" alt=""><span>ScopeMac</span></a><p>© <?= htmlspecialchars($year, ENT_QUOTES, 'UTF-8') ?> Tommy Frossman</p><div><a href="<?= $repo ?>/blob/main/LICENSE">GPL v3 or later</a><a href="<?= $repo ?>/issues">Feedback ↗</a></div><small>Independent project. Not affiliated with Hantek.</small></footer>
 </div>
