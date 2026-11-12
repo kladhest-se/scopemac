@@ -1,0 +1,23 @@
+{
+  "github": "https://github.com/kladhest-se/scopemac",
+  "github_git": "git@github.com:kladhest-se/scopemac.git",
+  "gitlab": "https://gitlab.example.com/your-group/scopemac",
+  "gitlab_git": "git@gitlab.example.com:your-group/scopemac.git",
+  "notary_profile": "ScopeMac-notary",
+  "env": {
+    "SCOPEMAC_SIGN_IDENTITY": "Developer ID Application: Your Name (TEAMID)",
+    "PHP": "php",
+    "SCOPEMAC_RELEASE_PYTHON": "/absolute/path/to/python3"
+  },
+  "credentials": {
+    "github": {
+      "provider": "env",
+      "variable": "GITHUB_TOKEN"
+    },
+    "gitlab": {
+      "provider": "env",
+      "variable": "GITLAB_TOKEN"
+    }
+  },
+  "source_branch": "main"
+}

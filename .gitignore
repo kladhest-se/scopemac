@@ -1,0 +1,11 @@
+/build/
+.DS_Store
+*.p12
+*.p8
+*.mobileprovision
+.env
+
+/outputs/
+/work/
+__pycache__/
+*.pyc
