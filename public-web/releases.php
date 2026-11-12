@@ -4,7 +4,7 @@
 function scopemacRelease(?array $data): ?array
 {
     $repo = 'https://github.com/kladhest-se/scopemac';
-    if (!$data || ($data['draft'] ?? true) !== false || ($data['prerelease'] ?? true) !== false
+    if (!$data || ($data['draft'] ?? true) !== false
         || !is_string($data['tag_name'] ?? null) || $data['tag_name'] === '') {
         return null;
     }
@@ -21,19 +21,19 @@ function scopemacRelease(?array $data): ?array
     }
     ksort($assets);
     $date = is_string($data['published_at'] ?? null) ? strtotime($data['published_at']) : false;
-    return ['tag' => $tag, 'url' => $url, 'date' => $date ? gmdate('Y-m-d', $date) : '', 'assets' => $assets];
+    return ['tag' => $tag, 'url' => $url, 'date' => $date ? gmdate('Y-m-d', $date) : '', 'assets' => $assets, 'prerelease' => ($data['prerelease'] ?? false) === true];
 }
 
 function scopemacLatestRelease(): ?array
 {
-    $cache = sys_get_temp_dir() . '/scopemac-github-release-' . substr(hash('sha256', __DIR__), 0, 16) . '.json';
+    $cache = sys_get_temp_dir() . '/scopemac-github-release-v2-' . substr(hash('sha256', __DIR__), 0, 16) . '.json';
     $cached = @file_get_contents($cache);
     $entry = $cached === false ? null : json_decode($cached, true);
     $release = scopemacRelease(is_array($entry['release'] ?? null) ? $entry['release'] : null);
     if (is_array($entry) && is_int($entry['checked'] ?? null) && time() - $entry['checked'] < 600) {
         return $release;
     }
-    $endpoint = 'https://api.github.com/repos/kladhest-se/scopemac/releases/latest';
+    $endpoint = 'https://api.github.com/repos/kladhest-se/scopemac/releases?per_page=100';
     $headers = ['Accept: application/vnd.github+json', 'User-Agent: ScopeMac-website', 'X-GitHub-Api-Version: 2022-11-28'];
     $body = false;
     $status = 0;
@@ -53,14 +53,23 @@ function scopemacLatestRelease(): ?array
         }
     }
     $data = is_string($body) ? json_decode($body, true) : null;
-    $fresh = scopemacRelease(is_array($data) ? $data : null);
+    $selected = null;
+    if (is_array($data)) {
+        foreach ($data as $candidate) {
+            if (is_array($candidate) && scopemacRelease($candidate)
+                && ($selected === null || strcmp($candidate['published_at'] ?? '', $selected['published_at'] ?? '') > 0)) {
+                $selected = $candidate;
+            }
+        }
+    }
+    $fresh = scopemacRelease($selected);
     if ($status === 200 && $fresh) {
         $release = $fresh;
-    } elseif ($status === 404) {
+    } elseif (($status === 404 || ($status === 200 && !$fresh))) {
         $release = null;
     }
     // Keep the last verified release during outages; cache failures to avoid repeated slow requests.
-    $stored = ($status === 200 && $fresh) ? $data : ($status === 404 ? null : ($entry['release'] ?? null));
+    $stored = ($status === 200 && $fresh) ? $selected : (($status === 404 || ($status === 200 && !$fresh)) ? null : ($entry['release'] ?? null));
     @file_put_contents($cache, json_encode(['checked' => time(), 'release' => $stored]), LOCK_EX);
     return $release;
 }
