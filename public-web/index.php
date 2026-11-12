@@ -31,7 +31,7 @@ $supportedScopes = [
   <meta property="og:url" content="<?= $site ?>/">
   <link rel="canonical" href="<?= $site ?>/">
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
-  <link rel="stylesheet" href="assets/site.css">
+  <link rel="stylesheet" href="assets/site.css?v=<?= substr(hash_file('sha256', __DIR__ . '/assets/site.css'), 0, 12) ?>">
   <title>ScopeMac <?= $version ?> — Hantek DSO2D15 for Mac</title>
 </head>
 <body>
